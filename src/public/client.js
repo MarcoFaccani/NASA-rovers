@@ -3,7 +3,8 @@ let store = {
     apod: '',
     roversNames: ['Curiosity', 'Opportunity', 'Spirit'],
     rovers: [],
-    isRoverSelected : false
+    isRoverSelected : false,
+    selectedRoverName: ''
 }
 
 
@@ -29,12 +30,22 @@ window.addEventListener('load', () => {
 const App = (state) => {
     let { rovers, apod } = state
 
-    return `
-        <section>
-            ${ImageOfTheDay(apod)}
-            ${Rover(state)}
-        </section>
-    `
+    if (!state.isRoverSelected) {
+        return `
+            <section>
+                ${ImageOfTheDay(apod)}
+                ${Rover(state)}
+            </section>
+        `
+    } else {
+        return `
+            <section>
+
+            </section>
+        `
+    }
+
+    
 }
 
 // ------------------------------------------------------  COMPONENTS
@@ -79,7 +90,6 @@ const Rover = (state) => {
             </div>
             `
 }
-
 
 // Show rover photos and details
 const ShowRover = (rover) => {
@@ -133,12 +143,22 @@ const getRovers = (roversNames) => {
     
     Array.from(roversNames).forEach( (roverName, index, array) => {
         fetch(`http://localhost:3000/rover?name=${roverName}`)
+            .then(res => res.json())
+            .then(res => {
+                console.log(res.rover.photo_manifest);
+                rovers.push(res.rover.photo_manifest)
+            })
+            .then( () => index === array.length -1 ? updateStore(store, { rovers }) : undefined)
+    });
+
+}
+
+
+const getRoverPhotos = (roverName) => {
+    fetch(`http://localhost:3000/rover-photos?name=${roverName}`)
         .then(res => res.json())
         .then(res => {
-            console.log(res.rover.photo_manifest);
-            rovers.push(res.rover.photo_manifest)
+            console.log(res);
         })
-        .then(() => index === array.length -1 ? updateStore(store, { rovers }) : undefined)
-    });
 
 }

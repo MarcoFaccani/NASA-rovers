@@ -39,6 +39,19 @@ app.get('/rover', async (req, res) => {
     } catch(err) {
         console.log('error:', err);
     }
+})
 
+
+// Get rover photos by name
+app.get('/rover-photos', async (req, res) => {
+    console.log("rover-photos has been invoked")
+    try {
+        // c'è un modo per evitare la data?
+        const photos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${req.query.name}/photos?earth_date=2015-6-3&api_key=${process.env.API_KEY}`)
+                                .then(res => res.json())
+        res.send({ photos }) 
+    } catch (err) {
+
+    }
 })
 
