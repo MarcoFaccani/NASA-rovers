@@ -1,13 +1,16 @@
 let store = {
-    user: { name: "Student" },
+    user: { name: "Human" },
     apod: '',
-    rovers: ['Curiosity', 'Opportunity', 'Spirit'],
+    roversNames: ['Curiosity', 'Opportunity', 'Spirit'],
+    rovers: [],
+    isRoverSelected : false
 }
 
-// add our markup to the page
+
 const root = document.getElementById('root')
 
 const updateStore = (store, newState) => {
+    console.log("UPDATING STORE")
     store = Object.assign(store, newState)
     render(root, store)
 }
@@ -16,54 +19,77 @@ const render = async (root, state) => {
     root.innerHTML = App(state)
 }
 
-
-// create content
-const App = (state) => {
-    let { rovers, apod } = state
-
-    return `
-        <header></header>
-        <main>
-            ${Greeting(store.user.name)}
-            <section>
-                <h3>Put things on the page!</h3>
-                <p>Here is an example section.</p>
-                <p>
-                    One of the most popular websites at NASA is the Astronomy Picture of the Day. In fact, this website is one of
-                    the most popular websites across all federal agencies. It has the popular appeal of a Justin Bieber video.
-                    This endpoint structures the APOD imagery and associated metadata so that it can be repurposed for other
-                    applications. In addition, if the concept_tags parameter is set to True, then keywords derived from the image
-                    explanation are returned. These keywords could be used as auto-generated hashtags for twitter or instagram feeds;
-                    but generally help with discoverability of relevant imagery.
-                </p>
-                ${ImageOfTheDay(apod)}
-            </section>
-        </main>
-        <footer></footer>
-    `
-}
-
 // listening for load event because page should load before any JS is called
 window.addEventListener('load', () => {
     render(root, store)
 })
 
-// ------------------------------------------------------  COMPONENTS
 
-// Pure function that renders conditional information -- THIS IS JUST AN EXAMPLE, you can delete it.
-const Greeting = (name) => {
-    if (name) {
-        return `
-            <h1>Welcome, ${name}!</h1>
-        `
-    }
+//------------------------------------------ create content
+const App = (state) => {
+    let { rovers, apod } = state
 
     return `
-        <h1>Hello!</h1>
+        <section>
+            ${ImageOfTheDay(apod)}
+            ${Rover(state)}
+        </section>
     `
 }
 
-// Example of a pure function that renders infomation requested from the backend
+// ------------------------------------------------------  COMPONENTS
+
+const Rover = (state) => {
+    let { rovers, roversNames} = state
+
+    const dummyRoversImages = ["https://mars.nasa.gov/system/content_pages/main_images/374_mars2020-PIA21635.jpg",
+                                "https://d2pn8kiwq2w21t.cloudfront.net/images/imagesmars202020180921PIA22109-16.width-1320.jpg",
+                                "https://m.dw.com/image/54182462_401.jpg"];
+
+    if (rovers.length === 0 ) getRovers(roversNames);
+
+    let content = ` <div class="row my-4">
+                        <div class="col mx-auto text-center text-uppercase">
+                            <h1>Choose the drone!</h1>
+                        </div>
+                    </div> `;
+   
+    rovers.forEach( (rover, index) => {
+        content = content.concat( `
+            <div class="col-lg-3 col-md-6 mx-auto my-5">
+                <div class="card text-center m-2">
+                    <img src="${dummyRoversImages[index]}" class="card-img-top" alt="...">
+                    <div class="card-body">
+                        <h5 class="card-title">${rover.name}</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Status: ${rover.status}</li>
+                            <li class="list-group-item">Launch date: ${rover.launch_date}</li>
+                            <li class="list-group-item">Landing date: ${rover.landing_date}</li>
+                            <li class="list-group-item">Total photos: ${rover.total_photos}</li>
+                        </ul>
+                        <a href="#" class="btn btn-primary mt-3">Show me!</a>
+                    </div>
+                </div>
+            </div> `
+        )
+     })
+
+    return `<div class="row">
+                ${content}
+            </div>
+            `
+}
+
+
+// Show rover photos and details
+const ShowRover = (rover) => {
+
+
+
+}
+
+
+// Create showcase image
 const ImageOfTheDay = (apod) => {
 
     // If image does not already exist, or it is not from today -- request it again
@@ -93,13 +119,26 @@ const ImageOfTheDay = (apod) => {
 
 // ------------------------------------------------------  API CALLS
 
-// Example API call
 const getImageOfTheDay = (state) => {
     let { apod } = state
 
     fetch(`http://localhost:3000/apod`)
         .then(res => res.json())
         .then(apod => updateStore(store, { apod }))
+}
 
-    return data
+
+const getRovers = (roversNames) => {
+    const rovers = [];
+    
+    Array.from(roversNames).forEach( (roverName, index, array) => {
+        fetch(`http://localhost:3000/rover?name=${roverName}`)
+        .then(res => res.json())
+        .then(res => {
+            console.log(res.rover.photo_manifest);
+            rovers.push(res.rover.photo_manifest)
+        })
+        .then(() => index === array.length -1 ? updateStore(store, { rovers }) : undefined)
+    });
+
 }
