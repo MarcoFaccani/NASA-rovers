@@ -31,8 +31,8 @@ app.get('/apod', async (req, res) => {
 // Get rover by name
 app.get('/rover', async (req, res) => {
     try {
-        console.log(`BE parameter = ${req.query.name}`);
-        const rover = await fetch(`https://api.nasa.gov/mars-photos/api/v1/manifests/${req.query.name}?api_key=${process.env.API_KEY}`)
+        console.log(`BE parameter = ${req.query.name.toLowerCase()}`);
+        const rover = await fetch(`https://api.nasa.gov/mars-photos/api/v1/manifests/${req.query.name.toLowerCase()}?api_key=${process.env.API_KEY}`)
                             .then(res => res.json())
         res.send({ rover }) //send to caller (FE)
 
@@ -41,16 +41,14 @@ app.get('/rover', async (req, res) => {
     }
 })
 
-
-// Get rover photos by name
+// Get rover's photos by rover's name
 app.get('/rover-photos', async (req, res) => {
-    console.log(`Rover-photos has been invoked ${req.query.name}`)
+    console.log(`Rover-photos has been invoked ${req.query.name.toLowerCase()}`)
     try {
         // c'è un modo per evitare la data?
-        let photos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${req.query.name}/photos?earth_date=2015-6-3&api_key=${process.env.API_KEY}`)
-                                .then(res => res.json())
-                                .then(res => console.log(res))
-        res.send({ photos }) 
+        let photos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${req.query.name.toLowerCase()}/latest_photos?api_key=${process.env.API_KEY}`)
+                .then(res => res.json())
+        res.send(photos); 
     } catch (err) {
         console.log('error:', err);
     }

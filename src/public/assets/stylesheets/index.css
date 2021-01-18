@@ -5,6 +5,8 @@ body {
   flex-direction: column;
   font-family: Arial;
   min-height: 100vh;
+  overflow-x: hidden!important;
+  background-color: #212529!important;
 }
 
 header {
