@@ -22,13 +22,28 @@ const render = async (root, state) => {
 
 // listening for load event because page should load before any JS is called
 window.addEventListener('load', () => {
-    render(root, store)
+    render(root, store);
+    root.onclick = event => {
+        if (event.target.innerHTML == 'Show me!') {
+            roverName = event.target.previousElementSibling.previousElementSibling.innerHTML;
+            getRoverPhotos(roverName);
+        }
+        
+    }
 })
 
 
 //------------------------------------------ create content
 const App = (state) => {
     let { rovers, apod } = state
+
+    return `
+            <section>
+                ${ImageOfTheDay(apod)}
+                ${Rover(state)}
+            </section>
+        `
+    /*
 
     if (!state.isRoverSelected) {
         return `
@@ -44,6 +59,7 @@ const App = (state) => {
             </section>
         `
     }
+    */
 
     
 }
@@ -92,10 +108,8 @@ const Rover = (state) => {
 }
 
 // Show rover photos and details
-const ShowRover = (rover) => {
-
-
-
+const showPhotos = (state) => {
+    
 }
 
 
@@ -155,10 +169,9 @@ const getRovers = (roversNames) => {
 
 
 const getRoverPhotos = (roverName) => {
+    console.log(`getRoverPhotos [INIZIO] - roverName: ${roverName}`)
     fetch(`http://localhost:3000/rover-photos?name=${roverName}`)
         .then(res => res.json())
-        .then(res => {
-            console.log(res);
-        })
+        .then(res => console.log(res))
 
 }

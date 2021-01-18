@@ -44,14 +44,15 @@ app.get('/rover', async (req, res) => {
 
 // Get rover photos by name
 app.get('/rover-photos', async (req, res) => {
-    console.log("rover-photos has been invoked")
+    console.log(`Rover-photos has been invoked ${req.query.name}`)
     try {
         // c'è un modo per evitare la data?
-        const photos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${req.query.name}/photos?earth_date=2015-6-3&api_key=${process.env.API_KEY}`)
-                                .then(res => res.json())
+        let photos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${req.query.name}/photos?earth_date=2015-6-3&api_key=${process.env.API_KEY}`)
+        //Note: I have also tried to do .then(res => res.json()) before sending the response to the FE, 
+        //but it seemt to making things worse: the recived object was a totally empty object
+
         res.send({ photos }) 
     } catch (err) {
-
+        console.log('error:', err);
     }
 })
-
