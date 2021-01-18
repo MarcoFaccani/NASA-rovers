@@ -3,8 +3,11 @@ let store = {
     apod: '',
     roversNames: ['Curiosity', 'Opportunity', 'Spirit'],
     rovers: [],
-    isRoverSelected : false,
-    selectedRoverName: ''
+    roversPhotos: {
+        'Curiosity': {},
+        'Opportunity': {},
+        'Spirit': {}
+    }
 }
 
 
@@ -108,8 +111,18 @@ const Rover = (state) => {
 }
 
 // Show rover photos and details
-const showPhotos = (state) => {
+const showPhotos = (state, roverName) => {
+    let content = `<div class="row my-5">
+                        
+                    </div>`;
+
+    state.roversPhotos(roverName).forEach( photo => {
+        content = content.concat = `<div class="col-lg-3 col-md-4 p-2 mx-auto rounded">
+                                        <img src="${photo.url}">
+                                    </div>`;
+    })
     
+    return content;
 }
 
 
@@ -173,5 +186,5 @@ const getRoverPhotos = (roverName) => {
     fetch(`http://localhost:3000/rover-photos?name=${roverName}`)
         .then(res => res.json())
         .then(res => console.log(res))
-
+        //.then(res => updateStore(store, res))
 }
