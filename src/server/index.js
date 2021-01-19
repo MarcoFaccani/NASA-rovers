@@ -1,3 +1,4 @@
+// ============ SETUP ============
 require('dotenv').config()
 const express = require('express')
 const bodyParser = require('body-parser')
@@ -12,12 +13,14 @@ app.use(bodyParser.json())
 
 app.use('/', express.static(path.join(__dirname, '../public')))
 
-// your API calls
+app.listen(port, () => console.log(`listening on port ${port}!`))
 
-// example API call
+// ============ API calls ============
+
+// Get picture of the day
 app.get('/apod', async (req, res) => {
     try {
-        let image = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${process.env.API_KEY}`)
+        const image = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${process.env.API_KEY}`)
             .then(res => res.json())
         res.send({ image })
     } catch (err) {
@@ -25,4 +28,28 @@ app.get('/apod', async (req, res) => {
     }
 })
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+// Get rover by name
+app.get('/rover', async (req, res) => {
+    try {
+        console.log(`BE parameter = ${req.query.name.toLowerCase()}`);
+        const rover = await fetch(`https://api.nasa.gov/mars-photos/api/v1/manifests/${req.query.name.toLowerCase()}?api_key=${process.env.API_KEY}`)
+                            .then(res => res.json())
+        res.send({ rover }) //send to caller (FE)
+
+    } catch(err) {
+        console.log('error:', err);
+    }
+})
+
+// Get rover's photos by rover's name
+app.get('/rover-photos', async (req, res) => {
+    console.log(`Rover-photos has been invoked ${req.query.name.toLowerCase()}`)
+    try {
+        // c'è un modo per evitare la data?
+        let photos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${req.query.name.toLowerCase()}/latest_photos?api_key=${process.env.API_KEY}`)
+                .then(res => res.json())
+        res.send(photos); 
+    } catch (err) {
+        console.log('error:', err);
+    }
+})
