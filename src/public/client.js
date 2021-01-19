@@ -38,7 +38,6 @@ window.addEventListener('load', () => {
 //------------------------------------------------------ create content
 const App = (state) => {
     const apod = state.apod;
-    //debugger
 
     return `
             <section>
@@ -58,8 +57,7 @@ const RoversDetails = (state) => {
     const dummyRoversImages = ["https://mars.nasa.gov/system/content_pages/main_images/374_mars2020-PIA21635.jpg",
                                 "https://d2pn8kiwq2w21t.cloudfront.net/images/imagesmars202020180921PIA22109-16.width-1320.jpg",
                                 "https://m.dw.com/image/54182462_401.jpg"];
-
-    if (rovers.length === 0 ) getRovers(state, roversNames);
+    if (rovers.length === 0 ) getRovers(roversNames);
     else {
         let content = ` <div class="row my-4">
                         <div class="col mx-auto text-center text-uppercase">
@@ -100,11 +98,13 @@ const RoversDetails = (state) => {
 
 // Show rover photos and details
 const ShowRoverPhotos = (state, roverName) => {
+    
     if (state.selectedRover != '' && state.selectedRover != undefined) {
         console.log('SHOW PHOTOS')
         let content = ``;
+        
         state.roversPhotos.get(state.selectedRover).forEach( photo => {
-            content = content.concat(`<div class="col-lg-3 col-md-5 col-sm-10 mx-auto rounded border">
+            content = content.concat(`<div class="col-lg-3 col-md-5 col-sm-10 mx-auto rounded border m-2">
                                             <img src="${photo}" class="img-fluid">
                                         </div>`);
         })
@@ -126,7 +126,7 @@ const ImageOfTheDay = (apod) => {
 
     const today = new Date()
     if (!apod || apod.date === today.getDate() ) { // If image does not already exist, or it is not from today -- request it again
-        getImageOfTheDay(store);
+        getImageOfTheDay();
     } else {
 
         // check if the photo of the day is actually type video!
@@ -156,7 +156,7 @@ const ImageOfTheDay = (apod) => {
 
 // ------------------------------------------------------  API CALLS
 
-const getImageOfTheDay = (state) => {
+const getImageOfTheDay = () => {
     console.log('getImageOfTheDay')
     fetch(`http://localhost:3000/apod`)
         .then(res => res.json())
@@ -164,7 +164,7 @@ const getImageOfTheDay = (state) => {
 }
 
 
-const getRovers = (state, roversNames) => {
+const getRovers = (roversNames) => {
     console.log('getRovers');
     let rovers = Immutable.List([]);
     
@@ -172,10 +172,13 @@ const getRovers = (state, roversNames) => {
         fetch(`http://localhost:3000/rover?name=${roverName}`)
             .then(res => res.json())
             .then(res => {
-                console.log(res.rover.photo_manifest);
+                //console.log(res.rover.photo_manifest);
                 rovers = rovers.push(res.rover.photo_manifest)
             })
-            .then( () => index === array.length -1 ? updateStore(store, { rovers }) : undefined)
+            .then( () => { 
+                console.log(index === array.length -1 ? rovers.toJS() : index);
+                index === array.length -1 ?  updateStore(store, { rovers })  : ''
+            } )
     });
 
 }
@@ -183,16 +186,12 @@ const getRovers = (state, roversNames) => {
 
 const getRoverPhotos = (state, roverName) => {
     console.log(`getRoverPhotos - roverName: ${roverName}`);
-    debugger
-
     const roversPhotos = state.toJS().roversPhotos;
+
     fetch(`http://localhost:3000/rover-photos?name=${roverName}`)
         .then(res => res.json())
         .then(data => {
             roversPhotos.set(roverName, data.latest_photos.map(imgObj => imgObj.img_src));
             updateStore(state, Immutable.Map({roversPhotos: roversPhotos, selectedRover: roverName}));
         } )
-        //.then(data =>  updateStore(store, Immutable.Map({ roversPhotos: new Map([ ['Curiosity', data.latest_photos.map(imgObj => imgObj.img_src)],
-                                                                                  //  ['Opportunity', {}], ['Spirit', {}] ]), 
-                                                                                  //  selectedRover: roverName }) ))
 }
