@@ -13,7 +13,7 @@ const render = async (root, state) => { root.innerHTML = App(state.toJS()) }
 
 //Update App state
 const updateStore = (state, newState) => {
-    console.log("UPDATING APP STATE")
+    console.log(`UPDATING APP STATE`)
     store = state.merge(newState)
     render(root, store)
 }
@@ -104,14 +104,14 @@ const ShowRoverPhotos = (state, roverName) => {
         let content = ``;
         
         state.roversPhotos.get(state.selectedRover).forEach( photo => {
-            content = content.concat(`<div class="col-lg-3 col-md-5 col-sm-10 mx-auto rounded border m-2">
+            content = content.concat(`<div class="col-lg-3 col-md-5 col-sm-10 mx-auto rounded m-4">
                                             <img src="${photo}" class="img-fluid">
                                         </div>`);
         })
         
         return `<div class="container">
                     <div class="row py-5 text-center">
-                        <h2 class="text-white mb-4">${state.selectedRover}'s Photos</h2>
+                        <h2 class="text-white text-uppercase mb-5">${state.selectedRover}'s Photos</h2>
                         ${content}
                     </div>
                 </div>
@@ -166,20 +166,16 @@ const getImageOfTheDay = () => {
 
 const getRovers = (roversNames) => {
     console.log('getRovers');
-    let rovers = Immutable.List([]);
-    
-    Array.from(roversNames).forEach( (roverName, index, array) => {
-        fetch(`http://localhost:3000/rover?name=${roverName}`)
-            .then(res => res.json())
-            .then(res => {
-                //console.log(res.rover.photo_manifest);
-                rovers = rovers.push(res.rover.photo_manifest)
-            })
-            .then( () => { 
-                console.log(index === array.length -1 ? rovers.toJS() : index);
-                index === array.length -1 ?  updateStore(store, { rovers })  : ''
-            } )
-    });
+
+    const urls = Array.from(roversNames).map(roverName => `http://localhost:3000/rover?name=${roverName}`);
+
+    Promise.all(urls.map(url => 
+        fetch(url).then(res => res.json())
+    )).then( data => {
+        const rovers = data.map( rover => rover.rover.photo_manifest)
+        console.log(rovers)
+        updateStore(store, {rovers: rovers})
+    })
 
 }
 
