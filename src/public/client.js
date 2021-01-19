@@ -1,22 +1,20 @@
 // App state
-let store = Immutable.Map({
-    user: Immutable.Map({ name: "Human" }),
+let store = Immutable.fromJS({
     apod: '',
-    roversNames: Immutable.List(['Curiosity', 'Opportunity', 'Spirit']),
     selectedRover: '',
     rovers: [],
+    roversNames: ['Curiosity', 'Opportunity', 'Spirit'],
     roversPhotos: new Map([ ['Curiosity', {}], ['Opportunity', {}], ['Spirit', {}] ])
 })
 
 
 const root = document.getElementById('root')
-const render = async (root, state) => { root.innerHTML = App(state) }
+const render = async (root, state) => { root.innerHTML = App(state.toJS()) }
 
 //Update App state
-const updateStore = (store, newState) => {
-    debugger
-    console.log("UPDATING STORE")
-    store = store.merge(newState)
+const updateStore = (state, newState) => {
+    console.log("UPDATING APP STATE")
+    store = state.merge(newState)
     render(root, store)
 }
 
@@ -29,7 +27,7 @@ window.addEventListener('load', () => {
     root.onclick = event => {
         if (event.target.innerHTML == 'Show me!') {
             roverName = event.target.previousElementSibling.previousElementSibling.innerHTML;
-            if (JSON.stringify(store.roversPhotos.get(roverName)) === '{}') getRoverPhotos(roverName);
+            if (JSON.stringify(store.toJS().roversPhotos.get(roverName)) === '{}') getRoverPhotos(store, roverName);
             else updateStore(store, {'selectedRover': roverName});
         }
 
@@ -39,30 +37,29 @@ window.addEventListener('load', () => {
 
 //------------------------------------------------------ create content
 const App = (state) => {
-    debugger
-    const apod = state.toJS().apod;
+    const apod = state.apod;
+    //debugger
 
     return `
             <section>
                 ${ImageOfTheDay(apod)}
-                ${Rover(state)}
-                ${state.toJS().selectedRover != '' ? showPhotos(state.toJS().selectedRover) : ''}
+                ${RoversDetails(state)}
+                ${ShowRoverPhotos(state)}
             </section>
         `
 }
 
 // ------------------------------------------------------  COMPONENTS
 
-const Rover = (state) => {
-    let rovers = state.toJS().rovers;
-    let roversNames = state.toJS().roversNames;
+const RoversDetails = (state) => {
+    let rovers = state.rovers;
+    let roversNames = state.roversNames;
 
     const dummyRoversImages = ["https://mars.nasa.gov/system/content_pages/main_images/374_mars2020-PIA21635.jpg",
                                 "https://d2pn8kiwq2w21t.cloudfront.net/images/imagesmars202020180921PIA22109-16.width-1320.jpg",
                                 "https://m.dw.com/image/54182462_401.jpg"];
 
-    debugger
-    if (rovers.length === 0 ) getRovers(roversNames);
+    if (rovers.length === 0 ) getRovers(state, roversNames);
     else {
         let content = ` <div class="row my-4">
                         <div class="col mx-auto text-center text-uppercase">
@@ -102,24 +99,25 @@ const Rover = (state) => {
 }
 
 // Show rover photos and details
-const showPhotos = (state, roverName) => {
-    debugger
-    console.log('SHOW PHOTOS')
-    let content = ``;
-
-    state.roversPhotos.get(roverName).forEach( photo => {
-        content = content.concat(`<div class="col-lg-3 col-md-5 col-sm-10 mx-auto rounded border">
-                                        <img src="${photo}" class="img-fluid">
-                                    </div>`);
-    })
-    
-    return `<div class="container">
-                <div class="row py-5 text-center">
-                    <h2 class="text-white mb-4">${state.selectedRover}'s Photos</h2>
-                    ${content}
+const ShowRoverPhotos = (state, roverName) => {
+    if (state.selectedRover != '' && state.selectedRover != undefined) {
+        console.log('SHOW PHOTOS')
+        let content = ``;
+        state.roversPhotos.get(state.selectedRover).forEach( photo => {
+            content = content.concat(`<div class="col-lg-3 col-md-5 col-sm-10 mx-auto rounded border">
+                                            <img src="${photo}" class="img-fluid">
+                                        </div>`);
+        })
+        
+        return `<div class="container">
+                    <div class="row py-5 text-center">
+                        <h2 class="text-white mb-4">${state.selectedRover}'s Photos</h2>
+                        ${content}
+                    </div>
                 </div>
-            </div>
-            `
+                `
+    }
+   
 }
 
 
@@ -127,7 +125,6 @@ const showPhotos = (state, roverName) => {
 const ImageOfTheDay = (apod) => {
 
     const today = new Date()
-    debugger
     if (!apod || apod.date === today.getDate() ) { // If image does not already exist, or it is not from today -- request it again
         getImageOfTheDay(store);
     } else {
@@ -167,7 +164,7 @@ const getImageOfTheDay = (state) => {
 }
 
 
-const getRovers = (roversNames) => {
+const getRovers = (state, roversNames) => {
     console.log('getRovers');
     let rovers = Immutable.List([]);
     
@@ -178,15 +175,24 @@ const getRovers = (roversNames) => {
                 console.log(res.rover.photo_manifest);
                 rovers = rovers.push(res.rover.photo_manifest)
             })
-            .then( () => index === array.length -1 ? updateStore(store,{ rovers }) : undefined)
+            .then( () => index === array.length -1 ? updateStore(store, { rovers }) : undefined)
     });
 
 }
 
 
-const getRoverPhotos = (roverName) => {
+const getRoverPhotos = (state, roverName) => {
     console.log(`getRoverPhotos - roverName: ${roverName}`);
+    debugger
+
+    const roversPhotos = state.toJS().roversPhotos;
     fetch(`http://localhost:3000/rover-photos?name=${roverName}`)
         .then(res => res.json())
-        .then(data =>  updateStore(store, { roversPhotos: new Map([ ['Curiosity', data.latest_photos.map(imgObj => imgObj.img_src)], ['Opportunity', {}], ['Spirit', {}] ]), selectedRover: roverName }) )
+        .then(data => {
+            roversPhotos.set(roverName, data.latest_photos.map(imgObj => imgObj.img_src));
+            updateStore(state, Immutable.Map({roversPhotos: roversPhotos, selectedRover: roverName}));
+        } )
+        //.then(data =>  updateStore(store, Immutable.Map({ roversPhotos: new Map([ ['Curiosity', data.latest_photos.map(imgObj => imgObj.img_src)],
+                                                                                  //  ['Opportunity', {}], ['Spirit', {}] ]), 
+                                                                                  //  selectedRover: roverName }) ))
 }
